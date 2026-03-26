@@ -1,0 +1,49 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+
+@inject IJSRuntime JS
+
+<PageTitle>Counter</PageTitle>
+
+<div class="container py-4">
+    <div class="card shadow-sm border-0 p-3">
+        <h1 class="mb-3">Counter</h1>
+
+        <div class="mb-3">
+            <label class="form-label text-muted">Historique (nombre de messages fourni à l'IA)</label>
+            <input type="number" class="form-control" value="@historyRange" min="1" max="200" @onchange="OnHistoryChanged" />
+            <small class="text-muted">La valeur est sauvegardée dans votre navigateur.</small>
+        </div>
+
+        <p role="status" class="text-muted">Current count: <strong class="text-white">@currentCount</strong></p>
+        <button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+    </div>
+</div>
+
+@code {
+    private int currentCount = 0;
+    private int historyRange = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            historyRange = await JS.InvokeAsync<int>("app.getHistoryRange");
+        } catch {
+            historyRange = 10;
+        }
+    }
+
+    private async Task OnHistoryChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e?.Value?.ToString(), out var v))
+        {
+            historyRange = Math.Clamp(v, 1, 200);
+            await JS.InvokeVoidAsync("app.setHistoryRange", historyRange);
+        }
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+}

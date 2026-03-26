@@ -1,0 +1,20 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_local
+    ports:
+      - "5672:5672"   
+      - "15672:15672"
+  db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: juve
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ai_orchestrator
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:

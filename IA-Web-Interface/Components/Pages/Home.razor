@@ -1,0 +1,367 @@
+﻿@page "/"
+@using System.Text
+@using System.Diagnostics
+@using Microsoft.AspNetCore.Components.Web
+@inject HttpClient Http
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>IA Orchestrator - Terminal</PageTitle>
+
+<div class="chat-wrapper">
+    <div class="chat-container shadow-2xl">
+        <div class="terminal-header">
+            <div class="dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+            </div>
+            <div class="title">AI_ORCHESTRATOR_V3.0</div>
+            <div class="status">● ONLINE</div>
+        </div>
+
+        <div class="chat-history" id="chatContainer">
+            @foreach (var msg in ChatHistory)
+            {
+                <div class="message-row @(msg.IsUser ? "user-row" : "ai-row")">
+                    <div class="message-bubble @(msg.IsUser ? "user-bubble" : "ai-bubble")">
+                        <div class="bubble-info">
+                            @(msg.IsUser ? "➜ USER" : "✦ AI_MODEL")
+                        </div>
+                        <div class="bubble-text">@msg.Text</div>
+                    </div>
+                </div>
+            }
+            @if (isProcessing)
+            {
+                <div class="message-row ai-row">
+                    <div class="message-bubble ai-bubble thinking">
+                        <span class="cursor-blink">_</span> EN RÉFLEXION...
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea @bind="userPrompt" 
+                          @onkeyup="HandleKeyUp" 
+                          placeholder="Saisissez votre commande..." 
+                          rows="1" 
+                          disabled="@isProcessing"></textarea>
+                <button @onclick="SendRequest" class="send-btn" disabled="@isProcessing">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Palette Vim-Inspired / Dark Mode */
+    :root {
+        --bg-dark: #1c1c1c;      /* Background Vim */
+        --panel-dark: #262626;   /* Status Bar */
+        --accent-color: #afd700; /* Vert Vim (Lime) */
+        --text-main: #e4e4e4;
+        --text-dim: #8a8a8a;
+        --ai-bubble-bg: #303030;
+        --user-bubble-bg: #123e4a; /* Teinte bleutée discrète */
+    }
+
+    .chat-wrapper {
+        background-color: #121212;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    .chat-container {
+        width: 900px;
+        height: 85vh;
+        background: var(--bg-dark);
+        border: 1px solid #444;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    /* Header */
+    .terminal-header {
+        background: var(--panel-dark);
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid #444;
+    }
+
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .red { background: #ff5f56; }
+    .yellow { background: #ffbd2e; }
+    .green { background: #27c93f; }
+
+    .title { flex-grow: 1; text-align: center; color: var(--text-dim); font-size: 0.8rem; letter-spacing: 2px; }
+    .status { color: var(--accent-color); font-size: 0.7rem; font-weight: bold; }
+
+    /* Chat History */
+    .chat-history {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        scrollbar-width: thin;
+        scrollbar-color: #444 transparent;
+    }
+
+    .message-row { display: flex; width: 100%; }
+    .user-row { justify-content: flex-end; }
+    .ai-row { justify-content: flex-start; }
+
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 4px;
+        max-width: 80%;
+        position: relative;
+        border: 1px solid transparent;
+    }
+
+    .user-bubble {
+        background: var(--user-bubble-bg);
+        border-color: #1a5c6d;
+        color: #fff;
+    }
+
+    .ai-bubble {
+        background: var(--ai-bubble-bg);
+        border-color: #444;
+        color: var(--text-main);
+    }
+
+    .bubble-info {
+        font-size: 0.65rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: var(--accent-color);
+        opacity: 0.8;
+    }
+
+    .bubble-text { line-height: 1.5; font-size: 0.95rem; }
+
+    /* Input Area */
+    .input-area {
+        padding: 20px;
+        background: var(--panel-dark);
+        border-top: 1px solid #444;
+    }
+
+    .input-wrapper {
+        display: flex;
+        background: #1c1c1c;
+        border: 1px solid #444;
+        border-radius: 4px;
+        padding: 10px;
+        align-items: center;
+    }
+
+    textarea {
+        flex-grow: 1;
+        background: transparent;
+        border: none;
+        color: white;
+        outline: none;
+        resize: none;
+        padding: 5px;
+    }
+
+    .send-btn {
+        background: transparent;
+        border: none;
+        color: var(--accent-color);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .send-btn:hover { transform: scale(1.1); color: #d7ff00; }
+
+    /* Animations */
+    .cursor-blink {
+        animation: blink 1s infinite;
+        font-weight: bold;
+        color: var(--accent-color);
+    }
+
+    @@keyframes blink { 50% { opacity: 0; } }
+</style>
+
+@code {
+    private string userPrompt = "";
+    private bool isProcessing = false;
+
+    // Notre "Mémoire" de conversation
+    private List<ChatMessage> ChatHistory = new();
+
+    public class ChatMessage {
+        public string Text { get; set; } = "";
+        public bool IsUser { get; set; }
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e) {
+        if (e.Key == "Enter" && !e.ShiftKey) {
+            await SendRequest();
+        }
+    }
+
+    private string sessionId = "";
+    private DotNetObjectReference<Home>? dotNetRef;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            sessionId = await JS.InvokeAsync<string>("app.getSessionId");
+        } catch {
+            sessionId = "anon";
+        }
+
+        // Start SSE connection for this session to receive AI responses as push events
+        try {
+            dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("app.startEventSource", sessionId, dotNetRef);
+        } catch {
+            // ignore failures; fallback will be polling (not implemented here)
+        }
+    }
+
+    [JSInvokable]
+    public Task OnSseMessage(string jobId, string result)
+    {
+        // replace placeholder containing the jobId
+        try {
+            var idx = ChatHistory.FindIndex(m => m.Text != null && m.Text.Contains(jobId));
+            if (idx >= 0) {
+                ChatHistory[idx].Text = result ?? "(vide)";
+                StateHasChanged();
+            } else {
+                // if not found, append the assistant message
+                ChatHistory.Add(new ChatMessage { Text = result ?? "(vide)", IsUser = false });
+                StateHasChanged();
+            }
+        } catch {
+            // ignore
+        }
+        return Task.CompletedTask;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try {
+            await JS.InvokeVoidAsync("app.stopEventSource");
+        } catch {}
+        try {
+            dotNetRef?.Dispose();
+        } catch {}
+    }
+
+    private async Task SendRequest() {
+        if (string.IsNullOrWhiteSpace(userPrompt) || isProcessing) return;
+
+        var currentPrompt = userPrompt;
+        userPrompt = ""; // On vide l'input tout de suite pour l'UX
+
+        // 1. Ajouter le message de l'utilisateur à la liste
+        ChatHistory.Add(new ChatMessage { Text = currentPrompt, IsUser = true });
+        isProcessing = true;
+
+        await ScrollToBottom();
+
+        try {
+            // Read configured history range from localStorage via JS
+            int history = 10;
+            try { history = await JS.InvokeAsync<int>("app.getHistoryRange"); } catch {}
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "api/ai/ask") {
+                Content = new StringContent(currentPrompt, Encoding.UTF8, "text/plain")
+            };
+            // Add header so the orchestrator can forward as a RabbitMQ header
+            request.Headers.Add("X-History-Size", history.ToString());
+            // Include our session id so the orchestrator and worker can persist memory
+            if (!string.IsNullOrEmpty(sessionId)) request.Headers.Add("X-Session-Id", sessionId);
+
+            var sw = Stopwatch.StartNew();
+            var response = await Http.SendAsync(request);
+            sw.Stop();
+
+            // Record metrics in localStorage
+            try { await JS.InvokeVoidAsync("app.incrementMetrics", sw.ElapsedMilliseconds); } catch {}
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Accepted) {
+                // Server returned 202 with a job id: do not display the raw GUID as the AI reply.
+                string jobId = null;
+                try {
+                    if (response.Headers.Contains("X-Job-Id")) jobId = response.Headers.GetValues("X-Job-Id").FirstOrDefault();
+                    if (string.IsNullOrEmpty(jobId)) {
+                        var bodyText = await response.Content.ReadAsStringAsync();
+                        if (!string.IsNullOrWhiteSpace(bodyText)) jobId = bodyText.Trim();
+                        // last resort: try to extract a UUID-like token from body
+                        if (string.IsNullOrEmpty(jobId)) {
+                            try {
+                                var rx = new System.Text.RegularExpressions.Regex(@"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+                                var m = rx.Match(bodyText ?? "");
+                                if (m.Success) jobId = m.Value;
+                            } catch {}
+                        }
+                    }
+                } catch {}
+
+                // Persist session id if provided
+                try {
+                    if (response.Headers.Contains("X-Session-Id")) {
+                        var sid = response.Headers.GetValues("X-Session-Id").FirstOrDefault();
+                        if (!string.IsNullOrEmpty(sid)) { sessionId = sid; await JS.InvokeVoidAsync("app.setSessionId", sid); }
+                    }
+                } catch {}
+
+                var placeholder = new ChatMessage { Text = jobId != null ? $"[En attente (ticket {jobId})]..." : "[En attente (ticket inconnu)]...", IsUser = false };
+                ChatHistory.Add(placeholder);
+                await ScrollToBottom();
+                // We rely on server-sent events (SSE) to push the result and replace the placeholder.
+            }
+            else if (response.IsSuccessStatusCode) {
+                var result = await response.Content.ReadAsStringAsync();
+                // If server assigned/echoed a session id, persist it
+                try {
+                    if (response.Headers.Contains("X-Session-Id")) {
+                        var sid = response.Headers.GetValues("X-Session-Id").FirstOrDefault();
+                        if (!string.IsNullOrEmpty(sid)) { sessionId = sid; await JS.InvokeVoidAsync("app.setSessionId", sid); }
+                    }
+                } catch {}
+                // 2. Ajouter la réponse de l'IA
+                ChatHistory.Add(new ChatMessage { Text = result, IsUser = false });
+            } else {
+                ChatHistory.Add(new ChatMessage { Text = " Erreur de l'orchestrateur Java.", IsUser = false });
+            }
+        }
+        catch (Exception ex) {
+            ChatHistory.Add(new ChatMessage { Text = $" Erreur : {ex.Message}", IsUser = false });
+        }
+        finally {
+            isProcessing = false;
+            await ScrollToBottom();
+        }
+    }
+
+    // Petit script pour faire descendre le scroll automatiquement
+    private async Task ScrollToBottom() {
+        await Task.Delay(100); // Laisse le temps au DOM de s'actualiser
+        try {
+            await JS.InvokeVoidAsync("eval", "var el=document.getElementById('chatContainer'); if(el) el.scrollTop = el.scrollHeight;");
+        } catch {
+            // ignore JS errors
+        }
+    }
+}

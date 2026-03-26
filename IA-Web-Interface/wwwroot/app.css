@@ -1,0 +1,80 @@
+:root{
+    --bg:#0f1724; /* dark navy */
+    --panel:#0f1724ff;
+    --card:#0f1724cc;
+    --muted:#94a3b8;
+    --accent:#4f46e5; /* indigo */
+    --accent-2:#06b6d4; /* teal */
+}
+
+html, body {
+    height: 100%;
+    font-family: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: linear-gradient(180deg, #071428 0%, #071b2a 45%, #071428 100%);
+    color: #e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+
+/* Constrain main content for better readability */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+a, .btn-link {
+    color: var(--accent);
+}
+
+.btn-primary {
+    color: #fff;
+    background: linear-gradient(90deg,var(--accent),var(--accent-2));
+    border: none;
+    box-shadow: 0 6px 18px rgba(79,70,229,0.15);
+}
+
+.btn-primary:active, .btn-primary:focus {
+    box-shadow: 0 4px 12px rgba(79,70,229,0.2);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    box-shadow: 0 8px 24px rgba(2,6,23,0.6);
+}
+
+.card-header {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    background: linear-gradient(90deg, rgba(79,70,229,0.95), rgba(6,182,212,0.9));
+}
+
+.card-footer {
+    background: transparent;
+    border-top: 1px solid rgba(255,255,255,0.03);
+}
+
+.content { padding-top: 1.25rem; }
+
+.text-muted { color: var(--muted) !important; }
+
+/* Chat specific */
+.chat-card { height: calc(85vh); display:flex; flex-direction:column; }
+.chat-body { flex:1; overflow:auto; padding:1rem; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02)); }
+.chat-bubble { padding: 0.6rem 0.9rem; border-radius: 14px; box-shadow: 0 2px 8px rgba(2,6,23,0.4); white-space:pre-wrap; }
+.chat-bubble.user { background: linear-gradient(90deg,var(--accent),var(--accent-2)); color: white; align-self:flex-end; }
+.chat-bubble.ai { background: rgba(255,255,255,0.03); color: #e6eef8; align-self:flex-start; }
+
+.input-group .form-control { background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); color: inherit; }
+.input-group .btn { border-radius: 8px; }
+
+/* Accessibility focus */
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.12rem rgba(79,70,229,0.28);
+}
+
+.validation-message { color: #ff6b6b; }
+
+.blazor-error-boundary { padding:1rem; border-radius:8px; background: linear-gradient(90deg,#ff6b6b,#ffb86b); color:#fff; }

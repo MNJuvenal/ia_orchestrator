@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "W3baLO4/H8g=",
+  "success": true,
+  "projectFilePath": "/home/juve/IA-Orchestrator-Local/IA-Web-Interface/IA-Web-Interface.csproj",
+  "expectedPackageFiles": [
+    "/home/juve/.nuget/packages/microsoft.aspnetcore.app.internal.assets/10.0.4/microsoft.aspnetcore.app.internal.assets.10.0.4.nupkg.sha512"
+  ],
+  "logs": []
+}
